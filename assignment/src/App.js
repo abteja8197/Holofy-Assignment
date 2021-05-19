@@ -4,19 +4,19 @@ import Drag from './components/drag';
 const App = () => {
   const data = [{
     title: '1',
-    items: ['1']
+    video: true
   },
   {
     title: '2',
-    items: []
+    video: false
   },
   {
     title: '3',
-    items: []
+    video: false
   },
   {
     title: '4',
-    items: []
+    video: false
   }]
   return (
     <div className="App" >

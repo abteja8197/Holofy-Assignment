@@ -5,43 +5,39 @@ const Drag = ({ data }) => {
 
     const [list, setList] = useState(data);
     const [dragging, setDragging] = useState(false);
-    const dragItem = useRef();
-    const dragNode = useRef();
+    const [regElem, setRegElem] = useState(0);
+    const videoRef = useRef();
 
     const handleDragStart = (e, params) => {
-        dragItem.current = params;
-        dragNode.current = e.target;
-        dragNode.current.addEventListener('dragend', handleDragEnd);
-        setTimeout(() => {
-            setDragging(true);
-        })
+        setDragging(true);
     }
-    const handleDragEnd = (e, params) => {
-        dragNode.current.removeEventListener('dragend', handleDragEnd);
 
-        dragItem.current = null;
-        dragNode.current = null;
+    const handleTouchStart = (e, params) => {
+        setDragging(true);
+        var elem = document.elementFromPoint(e.changedTouches[0].clientX, e.changedTouches[0].clientY);
+        setRegElem(elem);
+    }
+
+    const handleDragOver = (e) => {
+        e.preventDefault();
+    }
+
+    const handleDrop = (e, grpIndex) => {
+        let modifiedList = list;
+        modifiedList.forEach((i, index) => modifiedList[index].video = false);
+        modifiedList[grpIndex].video = true;
+
+        setList(modifiedList);
         setDragging(false);
     }
-    const handleDragEnter = (e, params) => {
-        const currentItem = dragItem.current;
-        if (e.target !== dragNode.current) {
-            setList(oldList => {
-                let newList = JSON.parse(JSON.stringify(oldList));
-                newList[params.grpIndex].items.splice(params.itemIndex, 0, newList[currentItem.grpIndex].items.splice(currentItem.itemIndex, 1)[0])
-                dragItem.current = params;
-                return newList;
-            })
-        }
-    }
 
-    const getStyles = (params) => {
-        const currentItem = dragItem.current;
-        if (currentItem.grpIndex === params.grpIndex && currentItem.itemIndex === params.itemIndex) {
-            return 'current item'
-        } else {
-            return 'item'
+    const handleTouchEnd = (e, grpIndex) => {
+        var elem = document.elementFromPoint(e.changedTouches[0].clientX, e.changedTouches[0].clientY);
+
+        if (!elem.contains(videoRef.current) && regElem !== elem) {
+            elem.appendChild(videoRef.current);
         }
+        setDragging(false);
     }
 
     return (
@@ -50,25 +46,24 @@ const Drag = ({ data }) => {
                 <div
                     key={grp.title}
                     className="group"
-                    onDragEnter={dragging && !grp.items.length ? (e) => handleDragEnter(e, { grpIndex, itemIndex: 0 }) : null}
+                    onDragOver={dragging ? (e) => handleDragOver(e, grpIndex) : null}
+                    onDrop={dragging ? (e) => handleDrop(e, grpIndex) : null}
+                    onTouchEnd={dragging ? (e) => handleTouchEnd(e, grpIndex) : null}
                 >
                     <p className="title">{grp.title}</p>
-                    {grp.items.map((item, itemIndex) => (
-                        <div
-                            key={item}
-                            draggable
-                            onDragStart={(e) => handleDragStart(e, { grpIndex, itemIndex })}
-                            onDragEnter={dragging ? (e) => handleDragEnter(e, { grpIndex, itemIndex }) : null}
-                            className={dragging ? getStyles({ grpIndex, itemIndex }) : 'item'}>
-                            <video width="200" height="300" controls>
-                                <source src={video1} type="video/mp4" />
-                                <p>
-                                    Your browser does not support the video tag.
-                                </p>
-                            </video>
-
-                        </div>
-                    ))}
+                    {grp.video ? (<div
+                        ref={videoRef}
+                        draggable
+                        onDragStart={(e) => handleDragStart(e, { grpIndex })}
+                        onTouchStart={(e) => handleTouchStart(e, { grpIndex })}
+                        className='item'>
+                        <video width="200" height="300" controls>
+                            <source src={video1} type="video/mp4" />
+                            <p>
+                                Your browser does not support the video tag.
+                            </p>
+                        </video>
+                    </div>) : null}
                 </div>
             ))}
         </div>
